@@ -4,7 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import { AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { checkForAppUpdate } from '../services/app-updates';
+import { AppUpdateModal } from '../components/AppUpdateModal';
+import { checkForAppUpdate } from '../services/app-update-manager';
 import { colors } from '../theme/colors';
 import { useAuth } from '../store/auth';
 
@@ -27,6 +28,7 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: colors.background },
         }}
       /> 
+      <AppUpdateModal />
     </SafeAreaProvider>
   );
 }

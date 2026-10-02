@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
-import { checkForAppUpdate, currentAppVersion } from '../../services/app-updates';
+import { checkForAppUpdate, currentAppVersion } from '../../services/app-update-manager';
 import { useAuth } from '../../store/auth';
 import { Card, Row, Screen, Section } from '../../ui/Kit';
 export default function More() {
