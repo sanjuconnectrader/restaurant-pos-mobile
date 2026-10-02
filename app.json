@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "ServeFlow POS",
+    "slug": "serveflow-pos",
+    "scheme": "serveflowpos",
+    "version": "1.0.0",
+    "platforms": [
+      "android",
+      "ios"
+    ],
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "Find and connect to receipt printers"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["BLUETOOTH_SCAN", "BLUETOOTH_CONNECT", "ACCESS_FINE_LOCATION"],
+      "package": "com.connectrader.serveflowpos"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      ["react-native-ble-plx", { "neverForLocation": true, "bluetoothAlwaysPermission": "Find and connect to receipt printers" }],
+      "universal-thermal-printer/plugin/withUsbPrinter"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "fc39184f-b7c0-4229-ac15-27e0bc78a578"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/fc39184f-b7c0-4229-ac15-27e0bc78a578"
+    }
+  }
+}
