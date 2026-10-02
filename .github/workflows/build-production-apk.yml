@@ -47,5 +47,22 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
-      - name: Start EAS production APK build
-        run: npx eas-cli@latest build --profile production-apk --platform android --non-interactive --no-wait
+      - name: Build production APK and wait for completion
+        run: |
+          npx eas-cli@latest build \
+            --profile production-apk \
+            --platform android \
+            --non-interactive \
+            --wait \
+            --json > build-result.json
+
+          artifact_url="$(jq -r '.artifacts.applicationArchiveUrl // .artifacts.buildUrl // empty' build-result.json)"
+          if [ -z "$artifact_url" ]; then
+            echo "EAS completed without returning an APK URL."
+            cat build-result.json
+            exit 1
+          fi
+
+          echo "### Production APK" >> "$GITHUB_STEP_SUMMARY"
+          echo "[Download APK]($artifact_url)" >> "$GITHUB_STEP_SUMMARY"
+          echo "APK download: $artifact_url"
