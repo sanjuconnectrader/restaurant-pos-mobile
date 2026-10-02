@@ -29,15 +29,15 @@ An Android debug build is available at `android/app/build/outputs/apk/debug/app-
 
 Run `npx expo lint`, `npx tsc --noEmit`, and `npx expo-doctor` in the mobile project. Run `npm test` and `npm run lint` in the backend checkout.
 
-## Android production updates
+## Android releases and updates
 
-The production EAS build profile uses the `production` update channel. After the client installs a **release APK built with that profile**, pushes to the GitHub `production` branch publish Android JavaScript and asset changes through [EAS Update](https://docs.expo.dev/eas-update/introduction/). The app downloads an available update when opened and normally applies it after another restart. A development or preview APK will not receive production updates.
+Production updates are distributed as signed APK files through [GitHub Releases](https://github.com/sanjuconnectrader/restaurant-pos-mobile/releases). The installed Android app checks the latest release at launch, at most once every six hours, and also provides **More → Check for updates**. When a newer semantic version is available, the app opens the APK download and Android asks the user to approve installation.
 
-Before enabling the workflow in `.github/workflows/production-update.yml`:
+To publish a release:
 
-1. Create an Expo access token for the account that owns the EAS project and save it as the GitHub Actions repository secret `EXPO_TOKEN`.
-2. Set the GitHub Actions repository variable `EXPO_PUBLIC_API_URL` to the reachable release backend URL ending in `/api`. Use the same URL when building the APK. This value is bundled into the app and is not a secret.
-3. Build and test the client APK with `npx eas-cli@latest build --profile production-apk --platform android` and give the client that APK. You can also run the **Build production APK** workflow from GitHub Actions. Keep the app version in `app.json` aligned with this build; EAS Update matches by channel and runtime version.
-4. Use the `production` GitHub branch for client releases. Its first push only creates the branch; subsequent pushes run lint, typecheck, and publish to the production channel. Review the GitHub Actions result for each push.
+1. Increase `expo.version` in `app.json`, for example from `1.0.0` to `1.0.1`. Every client release must have a new version.
+2. Ensure the GitHub Actions secret `EXPO_TOKEN` is valid and the repository variable `EXPO_PUBLIC_API_URL` points to the public backend URL ending in `/api`.
+3. Run **Build production APK** from the repository's GitHub Actions page. The workflow runs lint and typecheck, creates a signed APK, and publishes it as a GitHub Release named after the app version.
+4. Install the first APK manually on the client's Android device. Future releases trigger an in-app update prompt. The user downloads the APK and approves Android's installation screen; silent installation is not available to ordinary apps.
 
-Changes to native dependencies, `app.json`, `eas.json`, or the lockfile require a new APK. The workflow rejects those changes. Increment the app version for a new native release, rebuild and distribute the APK, then resume JavaScript updates. A GitHub push does not create a phone notification; an in-app prompt would require separate app code.
+All APK releases must use the same Android application ID and signing key. EAS Build currently stores that signing key and increments the Android version code. This workflow uses EAS Build's available plan quota for compilation, while update delivery is handled by GitHub Releases rather than EAS Update.

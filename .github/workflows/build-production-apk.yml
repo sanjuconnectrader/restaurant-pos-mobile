@@ -7,10 +7,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Check build configuration
         run: |
@@ -35,6 +36,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate release version
+        run: |
+          release_version="$(jq -r '.expo.version' app.json)"
+          release_tag="v$release_version"
+          if gh release view "$release_tag" >/dev/null 2>&1; then
+            echo "GitHub Release $release_tag already exists. Increase expo.version in app.json before building another client release."
+            exit 1
+          fi
+          echo "RELEASE_VERSION=$release_version" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=$release_tag" >> "$GITHUB_ENV"
+
       - name: Set up EAS CLI
         uses: expo/expo-github-action@v8
         with:
@@ -56,13 +68,20 @@ jobs:
             --wait \
             --json > build-result.json
 
-          artifact_url="$(jq -r '.artifacts.applicationArchiveUrl // .artifacts.buildUrl // empty' build-result.json)"
+          artifact_url="$(jq -r '(if type == "array" then .[0] else . end) | .artifacts.applicationArchiveUrl // .artifacts.buildUrl // empty' build-result.json)"
           if [ -z "$artifact_url" ]; then
             echo "EAS completed without returning an APK URL."
             cat build-result.json
             exit 1
           fi
 
+          apk_name="ServeFlow-POS-$RELEASE_TAG.apk"
+          curl --fail --location "$artifact_url" --output "$apk_name"
+          gh release create "$RELEASE_TAG" "$apk_name" \
+            --target "$GITHUB_SHA" \
+            --title "ServeFlow POS $RELEASE_TAG" \
+            --generate-notes
+
           echo "### Production APK" >> "$GITHUB_STEP_SUMMARY"
-          echo "[Download APK]($artifact_url)" >> "$GITHUB_STEP_SUMMARY"
-          echo "APK download: $artifact_url"
+          echo "[Download from GitHub Release](https://github.com/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Release: https://github.com/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG"
