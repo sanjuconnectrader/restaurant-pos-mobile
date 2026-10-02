@@ -1,0 +1,49 @@
+name: Check EAS build
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_id:
+        description: EAS build ID
+        required: true
+        type: string
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      BUILD_ID: ${{ inputs.build_id }}
+    steps:
+      - name: Set up EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Wait for build result
+        shell: bash
+        run: |
+          for attempt in $(seq 1 60); do
+            build_json="$(eas build:view "$BUILD_ID" --json)"
+            build_status="$(printf '%s' "$build_json" | jq -r '.status')"
+            echo "EAS build status: $build_status"
+
+            if [ "$build_status" = "FINISHED" ]; then
+              printf '%s' "$build_json" | jq -r '.artifacts.applicationArchiveUrl // .artifacts.buildUrl // "Build completed without an artifact URL."'
+              exit 0
+            fi
+
+            if [ "$build_status" = "ERRORED" ] || [ "$build_status" = "CANCELED" ]; then
+              printf '%s' "$build_json" | jq -r '.error.message // "EAS build did not complete successfully."'
+              exit 1
+            fi
+
+            sleep 30
+          done
+
+          echo "Timed out waiting for EAS build."
+          exit 1
