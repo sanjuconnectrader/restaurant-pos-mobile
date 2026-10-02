@@ -31,7 +31,12 @@ jobs:
         shell: bash
         run: |
           for attempt in $(seq 1 60); do
-            build_json="$(eas build:view "$BUILD_ID" --json)"
+            builds_json="$(eas build:list --limit 20 --json --non-interactive)"
+            build_json="$(printf '%s' "$builds_json" | jq --arg build_id "$BUILD_ID" 'map(select(.id == $build_id))[0]')"
+            if [ "$build_json" = "null" ]; then
+              echo "EAS build $BUILD_ID was not found for this project."
+              exit 1
+            fi
             build_status="$(printf '%s' "$build_json" | jq -r '.status' | tr '[:lower:]-' '[:upper:]_')"
             echo "EAS build status: $build_status"
 
