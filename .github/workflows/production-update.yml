@@ -11,6 +11,7 @@ concurrency:
 
 jobs:
   publish:
+    if: github.event.before != '0000000000000000000000000000000000000000'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -42,10 +43,6 @@ jobs:
         env:
           BEFORE_SHA: ${{ github.event.before }}
         run: |
-          if [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
-            echo "First push to production: create and verify the production APK before publishing an update."
-            exit 1
-          fi
           changed_files="$(git diff --name-only "$BEFORE_SHA" "$GITHUB_SHA")"
           if printf '%s\n' "$changed_files" | grep -Eq '^(app\.json|eas\.json|package\.json|package-lock\.json|android/|ios/)'; then
             echo "Native dependencies or build configuration changed. Create a new APK instead of publishing an over-the-air update."

@@ -38,6 +38,6 @@ Before enabling the workflow in `.github/workflows/production-update.yml`:
 1. Create an Expo access token for the account that owns the EAS project and save it as the GitHub Actions repository secret `EXPO_TOKEN`.
 2. Set the GitHub Actions repository variable `EXPO_PUBLIC_API_URL` to the reachable release backend URL ending in `/api`. Use the same URL when building the APK. This value is bundled into the app and is not a secret.
 3. Build and test the client APK with `npx eas-cli@latest build --profile production --platform android` and give the client that APK. Keep the app version in `app.json` aligned with this build; EAS Update matches by channel and runtime version.
-4. Create the `production` GitHub branch. Its first push intentionally does not publish an update; subsequent pushes run lint, typecheck, and publish to the production channel. Review the GitHub Actions result for each push.
+4. Use the `production` GitHub branch for client releases. Its first push only creates the branch; subsequent pushes run lint, typecheck, and publish to the production channel. Review the GitHub Actions result for each push.
 
 Changes to native dependencies, `app.json`, `eas.json`, or the lockfile require a new APK. The workflow rejects those changes. Increment the app version for a new native release, rebuild and distribute the APK, then resume JavaScript updates. A GitHub push does not create a phone notification; an in-app prompt would require separate app code.
