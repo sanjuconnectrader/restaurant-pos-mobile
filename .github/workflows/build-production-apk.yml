@@ -2,6 +2,11 @@ name: Build production APK
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - production
+    paths:
+      - app.json
 
 jobs:
   build:

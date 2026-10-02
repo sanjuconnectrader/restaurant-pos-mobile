@@ -37,7 +37,7 @@ To publish a release:
 
 1. Increase `expo.version` in `app.json`, for example from `1.0.0` to `1.0.1`. Every client release must have a new version.
 2. Ensure the GitHub Actions secret `EXPO_TOKEN` is valid and the repository variable `EXPO_PUBLIC_API_URL` points to the public backend URL ending in `/api`.
-3. Run **Build production APK** from the repository's GitHub Actions page. The workflow runs lint and typecheck, creates a signed APK, and publishes it as a GitHub Release named after the app version.
+3. Push the version change to the `production` branch. The **Build production APK** workflow starts automatically, runs lint and typecheck, creates a signed APK, and publishes it as a GitHub Release named after the app version. You can also start it manually from the Actions page.
 4. Install the first APK manually on the client's Android device. Future releases trigger an in-app update prompt. The user downloads the APK and approves Android's installation screen; silent installation is not available to ordinary apps.
 
 All APK releases must use the same Android application ID and signing key. EAS Build currently stores that signing key and increments the Android version code. This workflow uses EAS Build's available plan quota for compilation, while update delivery is handled by GitHub Releases rather than EAS Update.
