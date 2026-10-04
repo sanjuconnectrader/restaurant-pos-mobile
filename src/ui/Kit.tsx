@@ -1,14 +1,15 @@
 import { ReactNode, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, TextInputProps, View, useWindowDimensions } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { colors } from '../theme/colors';
 import { Icon, IconName } from './Icon';
 export function Screen({ children, title, subtitle, back = false, action }: { children: ReactNode; title?: string; subtitle?: string; back?: boolean; action?: ReactNode }) {
   const insets = useSafeAreaInsets(); const { width } = useWindowDimensions();
-  return <KeyboardAvoidingView style={s.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingTop: Math.max(insets.top, 16), paddingBottom: Math.max(24, insets.bottom + 18) }}><View style={[s.content, { maxWidth: Math.min(720, width) }]}>
+  return <KeyboardAwareScrollView style={s.screen} bottomOffset={24} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingTop: Math.max(insets.top, 16), paddingBottom: Math.max(24, insets.bottom + 18) }}><View style={[s.content, { maxWidth: Math.min(720, width) }]}>
     {(title || back) && <View style={s.heading}><View style={s.headingText}>{back && <Pressable onPress={() => router.back()} style={s.back}><Icon name="back"/></Pressable>}{title && <><Text style={s.title}>{title}</Text>{subtitle && <Text style={s.sub}>{subtitle}</Text>}</>}</View>{action}</View>}{children}
-  </View></ScrollView></KeyboardAvoidingView>;
+  </View></KeyboardAwareScrollView>;
 }
 export function Card({ children, style }: { children: ReactNode; style?: object }) { return <View style={[s.card, style]}>{children}</View>; }
 export function Button({ label, onPress, icon, variant = 'primary', disabled, loading }: { label: string; onPress: () => void; icon?: IconName; variant?: 'primary' | 'secondary' | 'text' | 'danger'; disabled?: boolean; loading?: boolean }) { return <Pressable accessibilityRole="button" disabled={disabled || loading} onPress={onPress} style={[s.button, variant === 'primary' ? s.primary : variant === 'danger' ? s.danger : variant === 'secondary' ? s.secondary : s.textButton, disabled && { opacity: .5 }]}>{loading ? <ActivityIndicator color={variant === 'primary' ? '#fff' : colors.accent}/> : <>{icon && <Icon name={icon} size={18} color={variant === 'primary' || variant === 'danger' ? '#fff' : colors.accent}/>}<Text style={[s.buttonText, { color: variant === 'primary' || variant === 'danger' ? '#fff' : colors.accent }]}>{label}</Text></>}</Pressable>; }

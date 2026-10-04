@@ -1,7 +1,9 @@
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { NavigationBar } from 'expo-navigation-bar';
 import { AppState } from 'react-native';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppUpdateModal } from '../components/AppUpdateModal';
@@ -20,8 +22,10 @@ export default function RootLayout() {
     return () => subscription.remove();
   }, []);
   return (
+    <KeyboardProvider>
     <SafeAreaProvider>
       <StatusBar style="dark" />
+      <NavigationBar hidden />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -30,5 +34,6 @@ export default function RootLayout() {
       /> 
       <AppUpdateModal />
     </SafeAreaProvider>
+    </KeyboardProvider>
   );
 }

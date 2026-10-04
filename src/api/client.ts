@@ -1,11 +1,8 @@
 import { AxiosError, create, isAxiosError } from 'axios';
-import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 
 const configured = process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, '');
-const hostUri = Constants.expoConfig?.hostUri;
-const host = hostUri ? (hostUri.includes('://') ? new URL(hostUri).hostname : hostUri.split(':')[0]) : undefined;
-export const API_URL = configured || `http://${host || 'localhost'}:5000/api`;
+export const API_URL = configured || 'https://react-native-backend-9ojm.onrender.com/api';
 const api = create({ baseURL: API_URL, timeout: 15000 });
 const bare = create({ baseURL: API_URL, timeout: 15000 });
 const emailActions = new Set(['/auth/owner/register', '/auth/owner/resend-code', '/auth/owner/set-password', '/auth/owner/login', '/auth/owner/forgot-password']);
@@ -40,7 +37,7 @@ export async function revokeSession(access: string, refresh: string) {
   await bare.post('/auth/logout', { refreshToken: refresh }, { headers: { Authorization: `Bearer ${access}` }, timeout: 5000 });
 }
 export function messageOf(error: unknown) {
-  if (isAxiosError(error)) return error.response?.data?.message || (error.code === 'ECONNABORTED' ? (error.config?.url && emailActions.has(error.config.url) ? 'Email request timed out. Check your inbox before retrying.' : 'Request timed out. Check your connection.') : `Cannot reach the POS server at ${API_URL}. Check that the backend and phone are on the same network.`);
+  if (isAxiosError(error)) return error.response?.data?.message || (error.code === 'ECONNABORTED' ? (error.config?.url && emailActions.has(error.config.url) ? 'Email request timed out. Check your inbox before retrying.' : 'Request timed out. Check your connection.') : `Cannot reach the POS server at ${API_URL}. Check your internet connection.`);
   return error instanceof Error ? error.message : 'Something went wrong';
 }
 

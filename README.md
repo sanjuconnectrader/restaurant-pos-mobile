@@ -4,11 +4,9 @@ Expo SDK 57 mobile client. The Express/Supabase PostgreSQL backend is maintained
 
 ## Run locally
 
-1. Clone the backend repository alongside this one and configure its `.env` with the Supabase PostgreSQL connection from the project's **Connect** dialog. Run `npm run migrate` inside the backend checkout, then `npm run dev`. The terminal should report PostgreSQL connected and POS API listening on port 5000. `http://localhost:5000/health` should return `status: up`.
-2. From `C:\posapp`, run `npx expo start --dev-client --clear`. Open the QR code with the installed development build on a phone on the same Wi-Fi. Receipt printer discovery requires that build.
-3. By default, the mobile client uses the computer address provided by Expo and calls port 5000. For a release build, tunnel, or a different backend address, set `EXPO_PUBLIC_API_URL` to the complete `/api` URL (see `.env.example`) before starting Expo.
-
-On a phone, `localhost` means the phone itself. Verify `http://YOUR_COMPUTER_LAN_IP:5000/health` opens in the phone browser if API requests fail. Keep the backend and Expo terminals running.
+1. From `C:\posapp`, run `npx expo start --dev-client --clear`. Open the QR code with the installed development build. Receipt printer discovery requires that build.
+2. The mobile client calls `https://react-native-backend-9ojm.onrender.com/api` by default. Check `https://react-native-backend-9ojm.onrender.com/health` if API requests fail.
+3. To use a local backend, clone the [backend repository](https://github.com/sanjuconnectrader/react-native-backend) alongside this one, configure its `.env`, and run it. Set `EXPO_PUBLIC_API_URL` in `.env.local` to `http://YOUR_COMPUTER_LAN_IP:5000/api` before starting Expo. The phone and computer must be on the same network.
 
 ## Receipt printers
 
