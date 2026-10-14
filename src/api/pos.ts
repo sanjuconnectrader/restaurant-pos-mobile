@@ -8,9 +8,9 @@ export type Reservation = { id: string; customerName: string; phone?: string; gu
 export type Receipt = { id: string; orderId: string; paymentId: string; number: string; snapshot: Record<string, unknown>; createdAt: string };
 export type Summary = { grossSales: string; refunds: string; netSales: string; completedOrders: number };
 export const pos = {
-  categories: () => get<Category[]>('/categories'), addCategory: (v: object) => post<Category>('/categories', v), editCategory: (id: string, v: object) => patch<Category>(`/categories/${id}`, v),
+  categories: () => get<Category[]>('/categories'), addCategory: (v: object) => post<Category>('/categories', v), editCategory: (id: string, v: object) => patch<Category>(`/categories/${id}`, v), removeCategory: (id: string) => del(`/categories/${id}`),
   menu: () => get<MenuItem[]>('/menu-items'), addMenu: (v: object) => post<MenuItem>('/menu-items', v), editMenu: (id: string, v: object) => patch<MenuItem>(`/menu-items/${id}`, v), removeMenu: (id: string) => del(`/menu-items/${id}`),
-  tables: () => get<Table[]>('/tables'), addTable: (v: object) => post<Table>('/tables', v), editTable: (id: string, v: object) => patch<Table>(`/tables/${id}`, v),
+  tables: () => get<Table[]>('/tables'), addTable: (v: object) => post<Table>('/tables', v), editTable: (id: string, v: object) => patch<Table>(`/tables/${id}`, v), removeTable: (id: string) => del(`/tables/${id}`),
   orders: () => get<Order[]>('/orders'), order: (id: string) => get<Order>(`/orders/${id}`), addOrder: (v: object) => post<Order>('/orders', v), addItem: (id: string, v: object) => post(`/orders/${id}/items`, v), action: (id: string, action: string) => post<Order>(`/orders/${id}/${action}`), voidItem: (id: string, itemId: string, reason: string) => post(`/orders/${id}/items/${itemId}/void`, { reason }),
   reservations: () => get<Reservation[]>('/reservations'), addReservation: (v: object) => post<Reservation>('/reservations', v), editReservation: (id: string, v: object) => patch<Reservation>(`/reservations/${id}`, v), seat: (id: string) => post<{ order: Order }>(`/reservations/${id}/seat`),
   dashboard: () => get<Summary>('/dashboard'), report: (from: string, to: string) => get<Summary>('/reports', { from, to }),

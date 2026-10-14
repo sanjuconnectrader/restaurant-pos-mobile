@@ -1,11 +1,13 @@
 import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 import { colors } from '../theme/colors';
-export type IconName = 'grid' | 'order' | 'table' | 'menu' | 'more' | 'back' | 'plus' | 'search' | 'user' | 'chart' | 'receipt' | 'calendar' | 'settings' | 'logout' | 'chevron' | 'wallet' | 'staff' | 'kitchen' | 'eye' | 'eyeOff';
+export type IconName = 'grid' | 'home' | 'order' | 'newOrder' | 'table' | 'menu' | 'more' | 'back' | 'plus' | 'search' | 'user' | 'chart' | 'receipt' | 'calendar' | 'settings' | 'logout' | 'chevron' | 'wallet' | 'staff' | 'kitchen' | 'refresh' | 'bell' | 'truck' | 'eye' | 'eyeOff';
 export function Icon({ name, size = 22, color = colors.ink }: { name: IconName; size?: number; color?: string }) {
   const line = { stroke: color, strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, fill: 'none' };
   const shapes: Record<IconName, React.ReactNode> = {
     grid: <><Rect x="3" y="3" width="7" height="7" rx="1" {...line}/><Rect x="14" y="3" width="7" height="7" rx="1" {...line}/><Rect x="3" y="14" width="7" height="7" rx="1" {...line}/><Rect x="14" y="14" width="7" height="7" rx="1" {...line}/></>,
+    home: <><Path d="M3 10.5 12 3l9 7.5" {...line}/><Path d="M5.5 9.5V21h13V9.5M9 21v-6h6v6" {...line}/></>,
     order: <><Rect x="5" y="3" width="14" height="18" rx="2" {...line}/><Line x1="8" y1="8" x2="16" y2="8" {...line}/><Line x1="8" y1="12" x2="16" y2="12" {...line}/><Line x1="8" y1="16" x2="13" y2="16" {...line}/></>,
+    newOrder: <><Rect x="4" y="3" width="12" height="18" rx="2" {...line}/><Line x1="7" y1="8" x2="13" y2="8" {...line}/><Line x1="7" y1="12" x2="12" y2="12" {...line}/><Path d="M19 13v8m-4-4h8" {...line}/></>,
     table: <><Rect x="4" y="7" width="16" height="9" rx="2" {...line}/><Line x1="7" y1="16" x2="7" y2="21" {...line}/><Line x1="17" y1="16" x2="17" y2="21" {...line}/></>,
     menu: <><Circle cx="12" cy="12" r="9" {...line}/><Line x1="4" y1="12" x2="20" y2="12" {...line}/><Line x1="9" y1="4" x2="9" y2="20" {...line}/></>,
     more: <><Circle cx="5" cy="12" r="1" fill={color}/><Circle cx="12" cy="12" r="1" fill={color}/><Circle cx="19" cy="12" r="1" fill={color}/></>,
@@ -21,6 +23,9 @@ export function Icon({ name, size = 22, color = colors.ink }: { name: IconName; 
     wallet: <><Rect x="3" y="6" width="18" height="14" rx="2" {...line}/><Path d="M4 6V4h15M15 13h6" {...line}/></>,
     staff: <><Circle cx="9" cy="8" r="3" {...line}/><Path d="M3 19c0-4 2-6 6-6s6 2 6 6m2-14a3 3 0 0 1 0 6m0 2c3 0 5 2 5 6" {...line}/></>,
     kitchen: <><Path d="M4 16h16M6 16a6 6 0 0 1 12 0M12 7V5M4 20h16" {...line}/></>,
+    refresh: <Path d="M20 11a8 8 0 1 0 1 5M20 4v7h-7" {...line}/>,
+    bell: <><Path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" {...line}/></>,
+    truck: <><Path d="M3 6h11v10H3zM14 10h4l3 3v3h-7z" {...line}/><Circle cx="7" cy="18" r="2" {...line}/><Circle cx="18" cy="18" r="2" {...line}/></>,
     eye: <><Path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" {...line}/><Circle cx="12" cy="12" r="3" {...line}/></>,
     eyeOff: <><Path d="M3 3l18 18M10 6.2A11 11 0 0 1 12 6c6.5 0 10 6 10 6a16 16 0 0 1-3.1 3.5M6.1 8.1A16 16 0 0 0 2 12s3.5 6 10 6c1.3 0 2.5-.2 3.6-.7M10.6 10.6a2 2 0 0 0 2.8 2.8" {...line}/></>,
   };
