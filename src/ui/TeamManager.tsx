@@ -7,9 +7,10 @@ import { colors } from '../theme/colors';
 import { Button, Card, Chip, Field, State } from './Kit';
 import { PhoneField } from './PhoneField';
 
-type Member = User & { designation: string; phone?: string; phoneCountryCode?: string };
+type Member = User & { designation: string; phone?: string; phoneCountryCode?: string; tags?: string[] };
 const teamImage = require('../../assets/team_member_illustration.png');
 const roles = ['MANAGER', 'CASHIER', 'WAITER', 'KITCHEN'];
+const tagOptions = ['WAITER', 'KITCHEN', 'CHEF', 'BILLER'];
 
 export function TeamManager() {
   const { data, loading, error, refresh } = useLive(useCallback(() => get<Member[]>('/employees'), []), [] as Member[]);
@@ -26,23 +27,26 @@ export function TeamManager() {
   const [phoneCountry, setPhoneCountry] = useState('');
   const [phone, setPhone] = useState('');
   const [designation, setDesignation] = useState('');
+  const [role, setRole] = useState('WAITER');
+  const [tags, setTags] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   function openForm(member?: Member) {
     setEditing(member?.id || null); setFirst(member?.firstName || ''); setLast(member?.lastName || '');
     setEmail(member?.email || ''); setPhoneCountry(member?.phoneCountryCode || '');
-    setPhone(member?.phone || ''); setDesignation(member?.designation || ''); setForm(true);
+    setPhone(member?.phone || ''); setDesignation(member?.designation || '');
+    setRole(member?.role || 'WAITER'); setTags(member?.tags || []); setForm(true);
   }
   function closeForm() { setForm(false); setEditing(null); }
   async function save() {
     if (!first.trim() || !last.trim() || !designation.trim()) return;
     setBusy(true);
     try {
-      const values = { firstName: first.trim(), lastName: last.trim(), email: email.trim() || null, phone: phone.trim() || null, phoneCountryCode: phoneCountry || undefined, designation: designation.trim() };
+      const values = { firstName: first.trim(), lastName: last.trim(), email: email.trim() || null, phone: phone.trim() || null, phoneCountryCode: phoneCountry || undefined, designation: designation.trim(), role, tags };
       if (editing) await patch(`/employees/${editing}`, values);
       else {
-        const result = await post<{ user: User; initialPin: string }>('/employees', { ...values, role: 'WAITER' });
+        const result = await post<{ user: User; initialPin: string }>('/employees', values);
         Alert.alert('Team member added', `Username: ${result.user.username}\nInitial PIN: ${result.initialPin}\nShare this PIN privately. It is shown only once.`);
       }
       closeForm(); await refresh();
@@ -50,7 +54,7 @@ export function TeamManager() {
     finally { setBusy(false); }
   }
   function deleteMember(member: Member) {
-    Alert.alert('Delete team member?', `${member.firstName} ${member.lastName} will lose access. This cannot be undone.`, [
+    Alert.alert('Delete team member?', `${member.firstName} ${member.lastName} will lose access and be removed from your team. Past orders and records will remain.`, [
       { text: 'Keep member', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
         setDeleting(member.id);
@@ -76,8 +80,30 @@ export function TeamManager() {
 
   return <>
     <View style={styles.heading}><View style={{ flex: 1 }}><Text style={styles.headingTitle}>Your team</Text><Text style={styles.hint}>{data.length} {data.length === 1 ? 'member' : 'members'} in this restaurant</Text></View>{data.length > 0 && <Button label="Add member" icon="plus" onPress={() => openForm()}/>}</View>
-    {form && <Card style={styles.formCard}><Text style={styles.formTitle}>{editing ? 'Edit team member' : 'Add team member'}</Text><Text style={styles.hint}>Enter the details used for their staff account.</Text><View style={styles.nameRow}><View style={styles.nameField}><Field label="First name" value={first} onChangeText={setFirst} autoCapitalize="words"/></View><View style={styles.nameField}><Field label="Last name" value={last} onChangeText={setLast} autoCapitalize="words"/></View></View><Field label="Email (optional)" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none"/><PhoneField label="Mobile number" optional countryCode={phoneCountry} onCountryChange={setPhoneCountry} number={phone} onNumberChange={setPhone}/><Field label="Designation" value={designation} onChangeText={setDesignation} placeholder="e.g. Server" autoCapitalize="words" maxLength={255}/>{!editing && <Text style={styles.hint}>New members start with waiter access. You can change their role below.</Text>}<View style={styles.formActions}><View style={styles.actionHalf}><Button label="Cancel" variant="secondary" onPress={closeForm}/></View><View style={styles.actionHalf}><Button label={editing ? 'Save changes' : 'Create member'} loading={busy} disabled={!first.trim() || !last.trim() || !designation.trim()} onPress={save}/></View></View></Card>}
-    {loading || error ? <State loading={loading} error={error} retry={refresh}/> : !data.length && !form ? <View style={styles.empty}><Image source={teamImage} resizeMode="contain" style={styles.emptyImage} accessibilityLabel="Restaurant team illustration"/><Text style={styles.emptyTitle}>Build your team</Text><Text style={styles.emptyCopy}>No team members have been added yet. Add your first teammate to help run service.</Text><Button label="Add Team Member" icon="plus" onPress={() => openForm()}/></View> : <View style={styles.grid}>{data.map((member) => <View key={member.id} style={[styles.memberCard, { width: cardWidth }]}><View style={styles.memberTop}><View style={styles.avatar}><Text style={styles.avatarText}>{(member.firstName[0] || '').toUpperCase()}{(member.lastName[0] || '').toUpperCase()}</Text></View><View style={{ flex: 1 }}><Text numberOfLines={1} style={styles.memberName}>{member.firstName} {member.lastName}</Text><Text numberOfLines={1} style={styles.memberRole}>{member.designation}</Text></View><View style={styles.status}><Text style={styles.statusText}>{member.active === false ? 'Inactive' : 'Active'}</Text></View></View><View style={styles.meta}><Text numberOfLines={1} style={styles.username}>@{member.username}</Text><Text style={styles.role}>{member.role.toLowerCase()}</Text></View>{viewing === member.id && <View style={styles.details}><Text style={styles.detailLabel}>CONTACT</Text><Text style={styles.detailValue}>{member.email || 'No email added'}</Text>{!!member.phone && <Text style={styles.detailValue}>{member.phone}</Text>}<Text style={styles.detailLabel}>ACCESS ROLE</Text><View style={styles.roles}>{roles.map((role) => <Chip key={role} label={role.toLowerCase()} selected={member.role === role} onPress={() => { if (member.role !== role) Alert.alert('Change role?', `${member.firstName} will have ${role.toLowerCase()} permissions.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Change', onPress: () => update(member, { role }) }]); }}/>)}</View><Button label="Reset PIN" variant="secondary" onPress={() => resetPin(member)}/><Button label={member.active === false ? 'Activate' : 'Deactivate'} variant="secondary" onPress={() => update(member, { active: member.active === false })}/></View>}<View style={styles.actions}><Pressable accessibilityRole="button" onPress={() => setViewing(viewing === member.id ? null : member.id)} style={styles.action}><Text style={styles.actionText}>{viewing === member.id ? 'Hide' : 'View'}</Text></Pressable><Pressable accessibilityRole="button" onPress={() => openForm(member)} style={styles.action}><Text style={styles.actionText}>Edit</Text></Pressable><Pressable accessibilityRole="button" disabled={member.id === myId || deleting === member.id} onPress={() => deleteMember(member)} style={styles.action}><Text style={[styles.deleteText, member.id === myId && styles.disabled]}>{deleting === member.id ? 'Deleting' : 'Delete'}</Text></Pressable></View></View>)}</View>}
+    {form && <Card style={styles.formCard}>
+      <Text style={styles.formTitle}>{editing ? 'Edit team member' : 'Add team member'}</Text>
+      <Text style={styles.hint}>Enter the details used for their staff account.</Text>
+      <View style={styles.nameRow}><View style={styles.nameField}><Field label="First name" value={first} onChangeText={setFirst} autoCapitalize="words"/></View><View style={styles.nameField}><Field label="Last name" value={last} onChangeText={setLast} autoCapitalize="words"/></View></View>
+      <Field label="Email (optional)" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none"/>
+      <PhoneField label="Mobile number" optional countryCode={phoneCountry} onCountryChange={setPhoneCountry} number={phone} onNumberChange={setPhone}/>
+      <Field label="Designation" value={designation} onChangeText={setDesignation} placeholder="e.g. Server" autoCapitalize="words" maxLength={255}/>
+      <Text style={styles.detailLabel}>ACCESS ROLE</Text>
+      <Text style={styles.hint}>Choose one permission level for this account.</Text>
+      <View style={styles.roles}>{roles.map((option) => <Chip key={option} label={option.toLowerCase()} selected={role === option} onPress={() => setRole(option)}/>)}</View>
+      <Text style={styles.detailLabel}>DISPLAY TAGS</Text>
+      <Text style={styles.hint}>Select any labels to show on this member’s card. Tags do not change access.</Text>
+      <View style={styles.roles}>{tagOptions.map((tag) => <Chip key={tag} label={tag.toLowerCase()} selected={tags.includes(tag)} onPress={() => setTags((current) => current.includes(tag) ? current.filter((value) => value !== tag) : [...current, tag])}/>)}</View>
+      <View style={styles.formActions}><View style={styles.actionHalf}><Button label="Cancel" variant="secondary" onPress={closeForm}/></View><View style={styles.actionHalf}><Button label={editing ? 'Save changes' : 'Create member'} loading={busy} disabled={!first.trim() || !last.trim() || !designation.trim()} onPress={save}/></View></View>
+    </Card>}
+    {loading || error ? <State loading={loading} error={error} retry={refresh}/> : !data.length && !form ? <View style={styles.empty}><Image source={teamImage} resizeMode="contain" style={styles.emptyImage} accessibilityLabel="Restaurant team illustration"/><Text style={styles.emptyTitle}>Build your team</Text><Text style={styles.emptyCopy}>No team members have been added yet. Add your first teammate to help run service.</Text><Button label="Add Team Member" icon="plus" onPress={() => openForm()}/></View> : <View style={styles.grid}>
+      {data.map((member) => <View key={member.id} style={[styles.memberCard, { width: cardWidth }]}>
+        <View style={styles.memberTop}><View style={styles.avatar}><Text style={styles.avatarText}>{(member.firstName[0] || '').toUpperCase()}{(member.lastName[0] || '').toUpperCase()}</Text></View><View style={{ flex: 1 }}><Text numberOfLines={1} style={styles.memberName}>{member.firstName} {member.lastName}</Text><Text numberOfLines={1} style={styles.memberRole}>{member.designation}</Text></View><View style={styles.status}><Text style={styles.statusText}>{member.active === false ? 'Inactive' : 'Active'}</Text></View></View>
+        <View style={styles.meta}><Text numberOfLines={1} style={styles.username}>@{member.username}</Text><Text style={styles.role}>{member.role.toLowerCase()}</Text></View>
+        {!!member.tags?.length && <View style={styles.roles}>{member.tags.map((tag) => <Chip key={tag} label={tag.toLowerCase()} selected/>)}</View>}
+        {viewing === member.id && <View style={styles.details}><Text style={styles.detailLabel}>CONTACT</Text><Text style={styles.detailValue}>{member.email || 'No email added'}</Text>{!!member.phone && <Text style={styles.detailValue}>{member.phone}</Text>}<Text style={styles.detailLabel}>ACCESS ROLE</Text><View style={styles.roles}>{roles.map((option) => <Chip key={option} label={option.toLowerCase()} selected={member.role === option} onPress={() => { if (member.role !== option) Alert.alert('Change role?', `${member.firstName} will have ${option.toLowerCase()} permissions.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Change', onPress: () => update(member, { role: option }) }]); }}/>)}</View><Button label="Reset PIN" variant="secondary" onPress={() => resetPin(member)}/><Button label={member.active === false ? 'Activate' : 'Deactivate'} variant="secondary" onPress={() => update(member, { active: member.active === false })}/></View>}
+        <View style={styles.actions}><Pressable accessibilityRole="button" onPress={() => setViewing(viewing === member.id ? null : member.id)} style={styles.action}><Text style={styles.actionText}>{viewing === member.id ? 'Hide' : 'View'}</Text></Pressable><Pressable accessibilityRole="button" onPress={() => openForm(member)} style={styles.action}><Text style={styles.actionText}>Edit</Text></Pressable><Pressable accessibilityRole="button" disabled={member.id === myId || deleting === member.id} onPress={() => deleteMember(member)} style={styles.action}><Text style={[styles.deleteText, member.id === myId && styles.disabled]}>{deleting === member.id ? 'Deleting' : 'Delete'}</Text></Pressable></View>
+      </View>)}
+    </View>}
   </>;
 }
 
