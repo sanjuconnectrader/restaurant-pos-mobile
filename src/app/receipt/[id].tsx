@@ -1,16 +1,18 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Print from 'expo-print';
 import { useCallback, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Alert, NativeModules, Platform, Text } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { messageOf, post } from '../../api/client';
 import { pos } from '../../api/pos';
 import { useLive } from '../../hooks/useLive';
 import { useAuth } from '../../store/auth';
-import { Button, Card, Field, Row, Screen, Section, State, money } from '../../ui/Kit';
+import { Button, Card as BaseCard, Field, Row, Screen, Section, State, money } from '../../ui/Kit';
 import { colors } from '../../theme/colors';
 import type { ReceiptPrinter } from '../../services/printers';
 type Snapshot = { number: string; restaurant: { name: string; address: string; phone?: string; currencyCode: string }; order: { id: string; type: string; tableId?: string }; employee: { name: string }; items: { name: string; quantity: number; unitPrice: string }[]; totals: { subtotal: string; tax: string; discount: string; total: string }; payment: { method: string; cashReceived?: string; changeDue?: string }; at: string };
+function Card({ children }: { children: ReactNode }) { return <BaseCard style={{ borderRadius: 17, padding: 18, gap: 13 }}>{children}</BaseCard>; }
 const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[ch] || ch);
 export default function ReceiptDetail() {
   const { id } = useLocalSearchParams<{ id: string }>(); const { can } = useAuth();

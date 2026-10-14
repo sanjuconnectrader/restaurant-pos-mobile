@@ -22,18 +22,18 @@ export default function RootLayout() {
     return () => subscription.remove();
   }, []);
   return (
-    <KeyboardProvider>
-    <SafeAreaProvider>
-      <StatusBar style="dark" />
-      <NavigationBar hidden />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.background },
-        }}
-      /> 
-      <AppUpdateModal />
-    </SafeAreaProvider>
+    <KeyboardProvider statusBarTranslucent navigationBarTranslucent>
+      <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.background }}>
+        <StatusBar style="dark" />
+        <NavigationBar hidden />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.background },
+          }}
+        />
+        <AppUpdateModal />
+      </SafeAreaProvider>
     </KeyboardProvider>
   );
 }
