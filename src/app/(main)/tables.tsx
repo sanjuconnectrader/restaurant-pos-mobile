@@ -56,7 +56,7 @@ export default function Tables() {
   }
 
   function confirmDelete(table: Table) {
-    Alert.alert('Delete table?', `Table ${table.tableNumber} will be removed. This cannot be undone.`, [
+    Alert.alert('Delete table?', `Table ${table.tableNumber} will be removed from your floor. Past orders will be preserved.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete table', style: 'destructive', onPress: async () => {
         setDeleting(table.id);

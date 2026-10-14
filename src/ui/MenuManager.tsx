@@ -145,7 +145,7 @@ export function MenuManager() {
 
   function deleteCategory(category: Category) {
     const count = items.filter((item) => item.categoryId === category.id).length;
-    Alert.alert('Delete category?', count ? `${category.name} contains ${count} menu ${count === 1 ? 'item' : 'items'}. Move or remove them first if the server requires an empty category.` : `${category.name} will be removed. This cannot be undone.`, [
+    Alert.alert('Delete category?', count ? `${category.name} and its ${count} menu ${count === 1 ? 'item' : 'items'} will be removed from the menu. Past orders will be preserved.` : `${category.name} will be removed from the menu.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
         setBusy(true);
@@ -157,7 +157,7 @@ export function MenuManager() {
   }
 
   function deleteItem(item: MenuItem) {
-    Alert.alert('Delete menu item?', `${item.name} will be removed from the menu. This cannot be undone.`, [
+    Alert.alert('Delete menu item?', `${item.name} will be removed from the menu. Past orders will be preserved.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
         setBusy(true);
