@@ -39,7 +39,7 @@ export default function OwnerStep() {
       else if (step === 'set-password') { if (v('password').length < 12 || v('password') !== v('confirm')) throw new Error('Use at least 12 characters and matching passwords.'); const session = await post<Session>('/auth/owner/set-password', { username: flow.username, password: v('password'), setupToken: flow.setupToken }); await accept(session); await forgetPendingRegistration().catch(() => {}); router.replace('/(main)'); }
       else if (step === 'login') { const username = v('username').trim().toUpperCase(); const data = await post<{ loginChallenge: string }>('/auth/owner/login', { username, password: v('password'), ...(pending?.username === username && pending.recoveryToken ? { recoveryToken: pending.recoveryToken } : {}) }); flow.set({ username, loginChallenge: data.loginChallenge }); router.replace('/owner/verify-login'); }
       else if (step === 'verify-login') { const session = await post<Session>('/auth/owner/verify-login', { username: flow.username, code: v('code'), loginChallenge: flow.loginChallenge }); await accept(session); await forgetPendingRegistration().catch(() => {}); router.replace('/(main)'); }
-      else if (step === 'continue-verification') { const email = (values.email ?? pending?.email ?? '').trim().toLowerCase(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter the email address used during registration.'); await post('/auth/owner/resend-code', { identifier: email }); setNotice('If registration is pending, check your email for a verification link and code. Email requests are limited to protect your account.'); }
+      else if (step === 'continue-verification') { const email = (values.email ?? pending?.email ?? '').trim().toLowerCase(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter the email address used during registration.'); await post('/auth/owner/resend-code', { identifier: email }); setNotice('If registration is pending, check your email for your username and verification code. Email requests are limited to protect your account.'); }
       else if (step === 'forgot-password') { await post('/auth/owner/forgot-password', { usernameOrEmail: v('usernameOrEmail') }); Alert.alert('Check your email', 'If the account exists, a reset code has been sent.'); router.replace('/owner/reset-password'); }
       else if (step === 'reset-password') { if (v('password').length < 12 || v('password') !== v('confirm')) throw new Error('Use at least 12 characters and matching passwords.'); await post('/auth/owner/reset-password', { username: v('username').toUpperCase(), code: v('code'), password: v('password') }); Alert.alert('Password updated', 'Sign in with your new password.'); router.replace('/owner/login'); }
     } catch (e) { setError(messageOf(e)); } finally { setBusy(false); }
@@ -58,10 +58,10 @@ export default function OwnerStep() {
     <Pressable accessibilityRole="button" onPress={() => router.push('/owner/continue-verification')} style={authStyles.resend}><Text style={authStyles.linkText}>Already registered? Continue verification</Text></Pressable>
   </OwnerAuthShell>;
 
-  if (step === 'continue-verification') return <OwnerAuthShell title="Continue verification" subtitle="Enter the email address you used to register. We’ll send a new link if your account is still pending.">
+  if (step === 'continue-verification') return <OwnerAuthShell title="Continue verification" subtitle="Enter the email address you used to register. We’ll send a new code if your account is still pending.">
     <View style={authStyles.formCard}>
       <Text style={authStyles.sectionTitle}>Check your inbox</Text>
-      <Text style={authStyles.sectionSubtitle}>Your email will contain your username, a 6-digit code, and a verification link valid for 24 hours.</Text>
+      <Text style={authStyles.sectionSubtitle}>Your email will contain your username and a 6-digit verification code. The code expires in 10 minutes.</Text>
       <Field label="Registered email" value={values.email ?? pending?.email ?? ''} onChangeText={change('email')} autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
       {!!error && <Text style={authStyles.error}>{error}</Text>}
       {!!notice && <Text style={authStyles.note}>{notice}</Text>}
@@ -92,9 +92,9 @@ export default function OwnerStep() {
     <AuthSubmitButton label="Create restaurant account" busy={busy} onPress={submit} />
     <View style={authStyles.signInRow}><Text style={authStyles.signInText}>Already have an account?</Text><Pressable accessibilityRole="button" onPress={() => router.replace('/owner/login')}><Text style={authStyles.linkText}>Sign in</Text></Pressable></View>
   </OwnerAuthShell>;
-  return <OwnerAuthShell title={titles[step] || 'Owner account'} subtitle={step === 'verify-email' ? 'Enter the 6-digit code from your email, or use the secure link in that email to verify and set a password later.' : step?.includes('verify') ? `Enter the 6-digit code sent to your email. ${flow.username ? `Account: ${flow.username}` : ''}` : 'Secure your restaurant account.'}>
+  return <OwnerAuthShell title={titles[step] || 'Owner account'} subtitle={step === 'verify-email' ? 'Enter the username and 6-digit code from your email. You can request a new code if the earlier one expired.' : step?.includes('verify') ? `Enter the 6-digit code sent to your email. ${flow.username ? `Account: ${flow.username}` : ''}` : 'Secure your restaurant account.'}>
     <View style={authStyles.formCard}>
-      {step === 'verify-email' && <><Text style={authStyles.sectionSubtitle}>The verification email includes your username and a link valid for 24 hours, even if you close the app.</Text><Field label="Username" value={values.username ?? flow.username} onChangeText={change('username')} autoCapitalize="characters" /></>}
+      {step === 'verify-email' && <><Text style={authStyles.sectionSubtitle}>The verification email includes your username and code. If you closed the app, enter them here to continue.</Text><Field label="Username" value={values.username ?? flow.username} onChangeText={change('username')} autoCapitalize="characters" /></>}
       {(step === 'verify-email' || step === 'verify-login') && field('code','6-digit code',{keyboard:'numeric'})}
       {(step === 'set-password' || step === 'reset-password') && <>{step === 'reset-password' && <>{field('username','Username')}{field('code','Reset code',{keyboard:'numeric'})}</>}{field('password','New password',{secure:true})}{field('confirm','Confirm password',{secure:true})}</>}
       {step === 'forgot-password' && field('usernameOrEmail','Username or email')}
