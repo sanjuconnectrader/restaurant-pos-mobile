@@ -3,7 +3,7 @@
     "name": "ServeFlow POS",
     "slug": "serveflow-pos",
     "scheme": "serveflowpos",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "platforms": [
       "android",
       "ios"

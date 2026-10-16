@@ -4,7 +4,7 @@ import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View, use
 import { messageOf, post, Session } from '../../api/client';
 import { OwnerAuthShell } from '../../components/OwnerAuthShell';
 import { useAuth } from '../../store/auth';
-import { forgetPendingUsername, loadPendingUsername, rememberPendingUsername, useOnboarding } from '../../store/onboarding';
+import { forgetPendingRegistration, loadPendingRegistration, rememberPendingRegistration, PendingRegistration, useOnboarding } from '../../store/onboarding';
 import { Field } from '../../ui/Kit';
 import { colors } from '../../theme/colors';
 import { PhoneField } from '../../ui/PhoneField';
@@ -23,21 +23,23 @@ export default function OwnerStep() {
   const { step } = useLocalSearchParams<{ step: string }>(); const flow = useOnboarding(); const accept = useAuth((s) => s.accept);
   const { width } = useWindowDimensions();
   const [values, setValues] = useState<Record<string, string>>({}); const [busy, setBusy] = useState(false); const [error, setError] = useState('');
-  useEffect(() => { if (step === 'verify-email' || step === 'login') void loadPendingUsername().then((saved) => { if (saved && !useOnboarding.getState().username) flow.set({ username: saved }); }).catch(() => {}); }, [step, flow]);
+  const [notice, setNotice] = useState(''); const [pending, setPending] = useState<PendingRegistration | null>(null);
+  useEffect(() => { if (step === 'verify-email' || step === 'login' || step === 'continue-verification') void loadPendingRegistration().then((saved) => { setPending(saved); if (saved && !useOnboarding.getState().username) flow.set({ username: saved.username }); }).catch(() => {}); }, [step, flow]);
   const v = (name: string) => values[name] || ''; const change = (name: string) => (value: string) => setValues((old) => ({ ...old, [name]: value }));
   const field = (name: string, label: string, opts: { secure?: boolean; keyboard?: 'email-address' | 'phone-pad' | 'numeric'; auto?: 'email' } = {}) => <Field key={name} label={label} value={v(name)} onChangeText={change(name)} autoCapitalize="none" secureTextEntry={opts.secure} keyboardType={opts.keyboard} autoComplete={opts.auto}/>;
   async function submit() {
-    setError(''); setBusy(true);
+    setError(''); setNotice(''); setBusy(true);
     try {
       if (step === 'register') {
         const required = ['firstName','lastName','email','phoneCountryCode','phone','name','businessType','address','city','state','postalCode'];
         if (required.some((key) => !v(key).trim())) throw new Error('Please complete every required field.');
-        const data = await post<{ username: string }>('/auth/owner/register', { owner: { firstName: v('firstName').trim(), lastName: v('lastName').trim(), email: v('email').trim(), phoneCountryCode: v('phoneCountryCode'), phone: v('phone').trim() }, restaurant: { name: v('name').trim(), businessType: v('businessType').trim(), address: v('address').trim(), city: v('city').trim(), state: v('state').trim(), postalCode: v('postalCode').trim(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' } });
-        flow.set({ username: data.username }); await rememberPendingUsername(data.username).catch(() => {}); router.replace('/owner/verify-email');
+        const data = await post<{ username: string; recoveryToken?: string }>('/auth/owner/register', { owner: { firstName: v('firstName').trim(), lastName: v('lastName').trim(), email: v('email').trim(), phoneCountryCode: v('phoneCountryCode'), phone: v('phone').trim() }, restaurant: { name: v('name').trim(), businessType: v('businessType').trim(), address: v('address').trim(), city: v('city').trim(), state: v('state').trim(), postalCode: v('postalCode').trim(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' } });
+        flow.set({ username: data.username }); await rememberPendingRegistration({ username: data.username, email: v('email').trim().toLowerCase(), recoveryToken: data.recoveryToken || '' }).catch(() => {}); router.replace('/owner/verify-email');
       } else if (step === 'verify-email') { const identifier = (values.username ?? flow.username).trim().toUpperCase(); if (!identifier) throw new Error('Enter your username.'); const data = await post<{ setupToken: string }>('/auth/owner/verify-email', { username: identifier, code: v('code') }); flow.set({ username: identifier, setupToken: data.setupToken }); router.replace('/owner/set-password'); }
-      else if (step === 'set-password') { if (v('password').length < 12 || v('password') !== v('confirm')) throw new Error('Use at least 12 characters and matching passwords.'); const session = await post<Session>('/auth/owner/set-password', { username: flow.username, password: v('password'), setupToken: flow.setupToken }); await accept(session); await forgetPendingUsername().catch(() => {}); router.replace('/(main)'); }
-      else if (step === 'login') { const data = await post<{ loginChallenge: string }>('/auth/owner/login', { username: v('username').trim().toUpperCase(), password: v('password') }); flow.set({ username: v('username').trim().toUpperCase(), loginChallenge: data.loginChallenge }); router.replace('/owner/verify-login'); }
-      else if (step === 'verify-login') { const session = await post<Session>('/auth/owner/verify-login', { username: flow.username, code: v('code'), loginChallenge: flow.loginChallenge }); await accept(session); router.replace('/(main)'); }
+      else if (step === 'set-password') { if (v('password').length < 12 || v('password') !== v('confirm')) throw new Error('Use at least 12 characters and matching passwords.'); const session = await post<Session>('/auth/owner/set-password', { username: flow.username, password: v('password'), setupToken: flow.setupToken }); await accept(session); await forgetPendingRegistration().catch(() => {}); router.replace('/(main)'); }
+      else if (step === 'login') { const username = v('username').trim().toUpperCase(); const data = await post<{ loginChallenge: string }>('/auth/owner/login', { username, password: v('password'), ...(pending?.username === username && pending.recoveryToken ? { recoveryToken: pending.recoveryToken } : {}) }); flow.set({ username, loginChallenge: data.loginChallenge }); router.replace('/owner/verify-login'); }
+      else if (step === 'verify-login') { const session = await post<Session>('/auth/owner/verify-login', { username: flow.username, code: v('code'), loginChallenge: flow.loginChallenge }); await accept(session); await forgetPendingRegistration().catch(() => {}); router.replace('/(main)'); }
+      else if (step === 'continue-verification') { const email = (values.email ?? pending?.email ?? '').trim().toLowerCase(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter the email address used during registration.'); await post('/auth/owner/resend-code', { identifier: email }); setNotice('If registration is pending, check your email for a verification link and code. Email requests are limited to protect your account.'); }
       else if (step === 'forgot-password') { await post('/auth/owner/forgot-password', { usernameOrEmail: v('usernameOrEmail') }); Alert.alert('Check your email', 'If the account exists, a reset code has been sent.'); router.replace('/owner/reset-password'); }
       else if (step === 'reset-password') { if (v('password').length < 12 || v('password') !== v('confirm')) throw new Error('Use at least 12 characters and matching passwords.'); await post('/auth/owner/reset-password', { username: v('username').toUpperCase(), code: v('code'), password: v('password') }); Alert.alert('Password updated', 'Sign in with your new password.'); router.replace('/owner/login'); }
     } catch (e) { setError(messageOf(e)); } finally { setBusy(false); }
@@ -49,11 +51,23 @@ export default function OwnerStep() {
       {field('password','Password',{secure:true})}
       <Pressable accessibilityRole="button" onPress={() => router.push('/owner/forgot-password')} style={authStyles.forgot}><Text style={authStyles.linkText}>Forgot password?</Text></Pressable>
       {!!error && <Text style={authStyles.error}>{error}</Text>}
-      {!!error && error.toLowerCase().includes('registration is incomplete') && <Pressable accessibilityRole="button" onPress={() => router.push('/owner/verify-email')}><Text style={authStyles.linkText}>Continue account verification</Text></Pressable>}
+      {!!error && <Pressable accessibilityRole="button" onPress={() => router.push('/owner/continue-verification')}><Text style={authStyles.linkText}>Resend Verification Email</Text></Pressable>}
       <AuthSubmitButton label="Sign in" busy={busy} onPress={submit} />
     </View>
     <Pressable accessibilityRole="button" onPress={() => router.push('/owner/register')} style={authStyles.createLink}><View style={authStyles.createInner}><View style={authStyles.createIcon}><Icon name="plus" size={19} color={colors.accent} /></View><View style={authStyles.createCopy}><Text style={authStyles.createTitle}>Create a restaurant account</Text><Text style={authStyles.createSubtitle}>Register a new restaurant and get started.</Text></View></View></Pressable>
-    <Pressable accessibilityRole="button" onPress={() => router.push('/owner/verify-email')} style={authStyles.resend}><Text style={authStyles.linkText}>Already registered? Continue verification</Text></Pressable>
+    <Pressable accessibilityRole="button" onPress={() => router.push('/owner/continue-verification')} style={authStyles.resend}><Text style={authStyles.linkText}>Already registered? Continue verification</Text></Pressable>
+  </OwnerAuthShell>;
+
+  if (step === 'continue-verification') return <OwnerAuthShell title="Continue verification" subtitle="Enter the email address you used to register. We’ll send a new link if your account is still pending.">
+    <View style={authStyles.formCard}>
+      <Text style={authStyles.sectionTitle}>Check your inbox</Text>
+      <Text style={authStyles.sectionSubtitle}>Your email will contain your username, a 6-digit code, and a verification link valid for 24 hours.</Text>
+      <Field label="Registered email" value={values.email ?? pending?.email ?? ''} onChangeText={change('email')} autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
+      {!!error && <Text style={authStyles.error}>{error}</Text>}
+      {!!notice && <Text style={authStyles.note}>{notice}</Text>}
+      <AuthSubmitButton label="Resend Verification Email" busy={busy} onPress={submit} />
+      <Pressable accessibilityRole="button" onPress={() => router.push('/owner/verify-email')} style={authStyles.resend}><Text style={authStyles.linkText}>I have a verification code</Text></Pressable>
+    </View>
   </OwnerAuthShell>;
 
   if (step === 'register') return <OwnerAuthShell title="Create a restaurant account" subtitle="Set up your restaurant and owner profile to get started.">
@@ -87,7 +101,7 @@ export default function OwnerStep() {
       {!!error && <Text style={authStyles.error}>{error}</Text>}
       <AuthSubmitButton label={step === 'forgot-password' ? 'Send reset code' : step === 'set-password' || step === 'reset-password' ? 'Save password' : 'Verify and continue'} onPress={submit} busy={busy} />
     </View>
-    {step === 'verify-email' && <Pressable accessibilityRole="button" onPress={async () => { try { const identifier = (values.username ?? flow.username).trim(); if (!identifier) throw new Error('Enter your username first.'); await post('/auth/owner/resend-code', { identifier }); Alert.alert('Check your email', 'If registration is pending, a new code and verification link were sent.'); } catch(e) { setError(messageOf(e)); } }} style={authStyles.resend}><Text style={authStyles.linkText}>Resend code and verification link</Text></Pressable>}
+    {step === 'verify-email' && <Pressable accessibilityRole="button" onPress={() => router.push('/owner/continue-verification')} style={authStyles.resend}><Text style={authStyles.linkText}>Resend verification email</Text></Pressable>}
   </OwnerAuthShell>;
 }
 
